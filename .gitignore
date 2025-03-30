@@ -1,6 +1,23 @@
-# SCRIPTS for beaker
+# Ignore virtual environments
+venv*/
+.venv*/
 
-beaker/*
-run_beaker_jobs.sh
+# Ignore model weights and large files
+*.pt
+*.ckpt
+*.log
 
-demo/*
+# Ignore dataset artifacts
+*.json
+*.tsv
+
+# Ignore cache and Python bytecode
+__pycache__/
+*.pyc
+
+# Ignore training logs
+lightning_logs/
+
+# Jupyter and system files
+*.ipynb_checkpoints
+.DS_Store

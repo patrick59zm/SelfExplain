@@ -121,19 +121,21 @@ class SEXLNet(LightningModule):
     def gil(self, pooled_input):
         batch_size = pooled_input.size(0)
         inner_products = torch.mm(pooled_input, self.concept_store.T)
-        _, topk_indices = torch.topk(inner_products, k=self.topk)
+
+        actual_topk = min(self.topk, inner_products.size(1))  # safe topk
+        _, topk_indices = torch.topk(inner_products, k=actual_topk)
+
         topk_concepts = torch.index_select(self.concept_store, 0, topk_indices.view(-1))
-        topk_concepts = topk_concepts.view(batch_size, self.topk, -1).contiguous()
+        topk_concepts = topk_concepts.view(batch_size, actual_topk, -1).contiguous()
 
         concat_pooled_concepts = torch.cat([pooled_input.unsqueeze(1), topk_concepts], dim=1)
         attended_concepts, _ = self.multihead_attention(query=concat_pooled_concepts,
-                                                     key=concat_pooled_concepts,
-                                                     value=concat_pooled_concepts)
+                                                        key=concat_pooled_concepts,
+                                                        value=concat_pooled_concepts)
 
-        gil_topk_logits = self.topk_gil_mlp(attended_concepts[:,0,:])
-        # print(gil_topk_logits.size())
-        # gil_logits = torch.mean(gil_topk_logits, dim=1)
+        gil_topk_logits = self.topk_gil_mlp(attended_concepts[:, 0, :])
         return gil_topk_logits, topk_indices
+
 
     def lil(self, hidden_state, nt_idx_matrix):
         phrase_level_hidden = torch.bmm(nt_idx_matrix, hidden_state)

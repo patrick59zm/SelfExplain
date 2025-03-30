@@ -1,5 +1,5 @@
-export DATA_FOLDER='data/XLNet-SUBJ'
-export TOKENIZER_NAME='xlnet-base-cased'
+export DATA_FOLDER="data/RoBERTa-SST-5"
+export TOKENIZER_NAME="roberta-base"
 export MAX_LENGTH=5
 
 # Creates jsonl files for train and dev

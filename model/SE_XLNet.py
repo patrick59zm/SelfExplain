@@ -167,17 +167,19 @@ class SEXLNet(LightningModule):
 
 
     def validation_step(self, batch, batch_idx):
-        # Load the data into variables
         logits, acc, _ = self(batch)
+        loss = self.loss(logits, batch[-1])  # using your model's `self.loss`
 
-        loss_f = nn.CrossEntropyLoss()
-        loss = loss_f(logits, batch[-1])
+        # Logging for model checkpoint callback
+        self.log("val_acc_epoch", acc, on_epoch=True, prog_bar=True)
+        self.log("val_loss_epoch", loss, on_epoch=True, prog_bar=True)
 
-        self.log('val_loss', loss, on_step=True,
-                 on_epoch=True, prog_bar=True, sync_dist=True)
-        self.log('val_acc', acc, on_step=True, on_epoch=True,
-                 prog_bar=True, sync_dist=True)
-        return {"loss": loss}
+        # Optional: log on_step as well for detailed progress bars (not required for checkpoints)
+        self.log("val_acc", acc, on_step=True, prog_bar=False)
+        self.log("val_loss", loss, on_step=True, prog_bar=False)
+
+        return {"val_loss": loss, "val_acc": acc}
+
 
     def test_step(self, batch, batch_idx):
         # Load the data into variables

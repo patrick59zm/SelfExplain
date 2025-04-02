@@ -1,4 +1,4 @@
-export DATA_FOLDER="data/RoBERTa-SST-5"
+export DATA_FOLDER="data/phismall"
 export TOKENIZER_NAME="roberta-base"
 export MAX_LENGTH=5
 

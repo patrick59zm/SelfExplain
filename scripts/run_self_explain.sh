@@ -10,14 +10,13 @@ export TOKENIZERS_PARALLELISM=false
        #                  --topk 5
 
  #for RoBERTa
- python model/run.py --dataset_basedir data/RoBERTa-SST-5 \
+ python model/run.py --dataset_basedir data/phismall \
                           --lr 2e-5  --max_epochs 5 \
                           --gpus 1 \
-                          --concept_store data/RoBERTa-SST-5/concept_store.pt \
+                          --concept_store data/phismall/concept_store.pt \
                           --accelerator auto \
                           --model_name roberta-base \
                           --topk 5 \
                           --gamma 0.1 \
-                          --lamda 0.1 \ 
-                          --num_classes 5
+                          --lamda 0.1 
 

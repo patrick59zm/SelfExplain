@@ -61,20 +61,43 @@ class ClassificationDataset(Dataset):
     def read_dataset(self):
         logging.info("Reading data from {}".format(self.data_path))
         data = pd.read_json(self.data_path, orient="records", lines=True)
-        self.sentences, self.answer_labels, self.nt_idx_matrix = [], [], []
-        logging.info(f"Reading dataset file from {self.data_path}")
-        # print(data, len(data))
-        for i, row in tqdm(data.iterrows(), total=len(data), desc="Reading dataset samples"):
-            self.answer_labels.append(int(row["label"]))
-            self.sentences.append(row["sentence"])
-            self.nt_idx_matrix.append(torch.tensor(row["nt_idx_matrix"]).long())
 
-        encoded_input = self.tokenizer(self.sentences)
+        self.sentences, self.answer_labels, self.nt_idx_matrix = [], [], []
+        num_skipped = 0
+
+        for row in tqdm(data.to_dict(orient="records"), desc="Reading dataset samples"):
+            if row.get("nt_idx_matrix") is None or row.get("parse_tree") is None:
+                num_skipped += 1
+                continue  # Skip broken or unparsable samples
+
+            try:
+                sentence = row["sentence"]
+                tokens = self.tokenizer.tokenize(sentence)
+                token_count = len(tokens)
+                nt_matrix = torch.tensor(row["nt_idx_matrix"]).long()
+
+                # ✅ Check if nt_idx_matrix width exceeds token count
+                if nt_matrix.size(1) > token_count:
+                    logging.warning(f"Skipping due to shape mismatch: nt_idx_matrix width {nt_matrix.size(1)} > token count {token_count}")
+                    num_skipped += 1
+                    continue
+
+                self.answer_labels.append(int(row["label"]))
+                self.sentences.append(sentence)
+                self.nt_idx_matrix.append(nt_matrix)
+
+            except Exception as e:
+                logging.warning(f"Skipping row due to error: {e}")
+                num_skipped += 1
+
+        if num_skipped > 0:
+            logging.warning(f"⚠️ Skipped {num_skipped} broken or oversized samples")
+
+        encoded_input = self.tokenizer(self.sentences, padding=True, truncation=True, max_length=512)
         self.input_ids = encoded_input["input_ids"]
-        if "token_type_ids" in encoded_input:
-            self.token_type_ids = encoded_input["token_type_ids"]
-        else:
-            self.token_type_ids = [[0] * len(s) for s in encoded_input["input_ids"]]
+        self.token_type_ids = encoded_input.get("token_type_ids", [[0] * len(ids) for ids in self.input_ids])
+
+
 
 
     def __len__(self) -> int:

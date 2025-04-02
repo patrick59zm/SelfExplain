@@ -70,21 +70,27 @@ class ParseTree():
         return parsed_tree
 
     def get_parse_tree_for_raw_sent(self, raw_sent):
-        tokenized_sent = self.tokenizer.tokenize(raw_sent)
-        combined_text = [self.remove_non_ascii(x) for x in tokenized_sent]
-        combined_text = combined_text[:self.TOKEN_LIMIT]
+        try:
+            tokenized_sent = self.tokenizer.tokenize(raw_sent)
+            combined_text = [self.remove_non_ascii(x) for x in tokenized_sent]
+            combined_text = combined_text[:self.TOKEN_LIMIT]
 
-        parsed_tree = self.parser.parse(sentence=combined_text)
-        parsed_tree = ParentedTree.convert(parsed_tree)
-        parsed_tree = self.add_indices_to_terminals(parsed_tree)
-        parsed_tree_as_list = self.traverse_and_store(parsed_tree, parse_tree_stored=[])
+            parsed_tree = self.parser.parse(sentence=combined_text)
+            parsed_tree = ParentedTree.convert(parsed_tree)
+            parsed_tree = self.add_indices_to_terminals(parsed_tree)
+            parsed_tree_as_list = self.traverse_and_store(parsed_tree, parse_tree_stored=[])
 
-        num_tokens = len(combined_text)
-        parsed_tree_as_list = self.get_one_hot_encoded_vector(parse_tree_list=parsed_tree_as_list,
-                                                              num_tokens=num_tokens)
+            num_tokens = len(combined_text)
+            parsed_tree_as_list = self.get_one_hot_encoded_vector(parse_tree_list=parsed_tree_as_list,
+                                                                num_tokens=num_tokens)
 
-        nt_idx_matrix = [x['onehot'] for x in parsed_tree_as_list]
-        return parsed_tree_as_list, nt_idx_matrix
+            nt_idx_matrix = [x['onehot'] for x in parsed_tree_as_list]
+            return parsed_tree_as_list, nt_idx_matrix
+
+        except Exception as e:
+            print(f"⚠️ Skipping sentence due to parse error: {e}")
+            return None, None
+
 
     def get_one_hot_encoded_vector(self, parse_tree_list, num_tokens):
         for item in parse_tree_list:
